@@ -208,13 +208,8 @@ if False:
     print(f'Max: {stat_max}\nMin: {stat_min}\nDev: {stat_dev}\nAvg: {stat_avg}\n')
     mso.getScreenshot('test_histogram.png')
         
-    # csv_list.append([stat_max,
-    #                 stat_min,
-    #                 psu_vdda_volts,
-    #                 psu_vdda_amps,
-    #                 psu_vddd_volts,
-    #                 psu_vddd_amps,
-    #                 smu_amps])
+    # Todo: CSV Output
+    
 
     
 
