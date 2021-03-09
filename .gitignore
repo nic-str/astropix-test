@@ -1,4 +1,10 @@
+#create empy folder
 csv/*
 plots/*
 screenshots/*
+
+!csv/.gitkeep
+!plots/.gitkeep
+!screenshots/.gitkeep
+
 __pycache__/
