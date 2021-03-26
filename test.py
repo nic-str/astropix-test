@@ -8,6 +8,7 @@ Created on Wed Jan 27 12:08:16 2021
 import numpy
 import pyvisa
 import time
+import csv
 
 from datetime import datetime
 
@@ -17,11 +18,9 @@ from instruments.mso5000 import mso5000
 from instruments.hp6632b import hp6632b
 from instruments.k236 import k236
 
-#from IPython.display import Image
-
 enable_scope = True
-enable_psu = True
-enable_smu = True
+enable_psu = False
+enable_smu = False
 
 path_screenshots = 'screenshots/'
 
@@ -75,7 +74,6 @@ if enable_smu:
 if enable_scope:
     mso = mso5000(mso1)
     mso.getScreenshot('test.png')
-    #Image(filename='screenshots/test.png')
     
     print("Scope setup done")
 
@@ -85,7 +83,6 @@ if enable_scope & enable_psu & enable_smu:
     psu_vddd.setOutputON(True)
     time.sleep(1)
     smu.setOperate(True)
-    #smu.
     
     print("Outputs enabled")
 
@@ -99,7 +96,7 @@ csv_list = []
 
 
 # Test DAC Linearity
-if True:
+if False:
     # Output CSV filename
     filename = input("Input the Filename: ")
     
@@ -209,6 +206,72 @@ if False:
     mso.getScreenshot('test_histogram.png')
         
     # Todo: CSV Output
+
+# Test SFOUT    
+if True:
+    config = asicconfig_http()
+    
+    
+    
+    #Setup Vmax Measurement
+    mso.setStatisticsItem('vmax','chan1')
+    
+    filename = input("Input the Filename: ")
+    header = "Vinj,aver,dev"
+    csv_array=[]
+    numpy.savetxt('csv/{}.csv'.format(filename),
+                  csv_array,
+                  delimiter=",",
+                  fmt='%s',
+                  header=header)
+    
+    injectionvoltage=0.1
+    
+    dev=0
+    avg=0
+    max=0
+    csv_list=[]
+    
+    mso.setChannelProbe(1,1)
+    mso.setChannelProbe(10,2)
+    mso.setChannelOptions('100M', 'AC', 1)
+    mso.setChannelOptions('100M', 'DC', 2)
+    
+    mso.setChannelScale(0.01,1)
+    mso.setChannelScale(0.05,2)
+    # Set trigger on injection Channel
+    mso.setTriggerEdge('ac', 'normal', 'negative', 0.05, 'channel2')
+    
+    while injectionvoltage <= 1.8:
+        config.startInjection(injectionvoltage, 500, 100, 300)
+        
+        
+        mso.setStatisticsReset()
+        time.sleep(10)
+        maximum=float(mso.getStatisticsItem('max','vmax','chan1'))
+        mso.setChannelScale(maximum/4,1)
+        
+        # Sample 5s to adjust scale
+        mso.setStatisticsReset()
+        while float(mso.getStatisticsItem('cnt','vmax','chan1')) < 500:
+            time.sleep(5)
+        
+            
+        dev=float(mso.getStatisticsItem('dev','vmax','chan1'))
+        avg=float(mso.getStatisticsItem('aver','vmax','chan1'))
+        
+        csv_list=[injectionvoltage,avg,dev]
+        #line=numpy.array(csv_list)
+        
+        with open('csv/{}.csv'.format(filename),'a', newline='') as fd:
+            csv_writer = csv.writer(fd)
+            csv_writer.writerow(csv_list)
+            #fd.write(str(csv_list).strip('[]'))
+        
+        
+        injectionvoltage=round(injectionvoltage+0.05,2)
+    
+    
     
 
     
