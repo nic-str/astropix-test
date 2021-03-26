@@ -29,11 +29,12 @@ class mso5000:
         with open(self.path_screenshots+filename, 'wb') as f:
             print('Capturing screen to', self.path_screenshots+filename)
             f.write(bytearray(buf))
-        
+    
+    #Channel settings  
     def setChannelScale(self, scale="1.000", channel=1):
         self.inst.write(':channel' + str(channel) + ':scale ' + str(scale))
 
-    #Channel settings
+   
     def setChannelOptions(self, BWlimit='OFF', coupling='DC', channel=1):
         validBW = {'20M', '100M', '200M', 'OFF'}
         
@@ -44,6 +45,13 @@ class mso5000:
         
         if coupling in validCouple:
             self.inst.write(':channel' + str(channel) + ':coupling ' + coupling)
+        #Channel settings
+    
+    def setChannelProbe(self, probe=1,channel=1):
+        validProbe = {1, 10}
+        
+        if probe in validProbe:
+            self.inst.write(':channel' + str(channel) + ':probe ' + str(probe))
             
     #Timebase
     #modes Main, Xy, Roll
@@ -63,13 +71,13 @@ class mso5000:
     #sweep: auto, normal, single
     #holdoff:
     #source: channel1, channel2, D0, etc..
-    def setTrigger(self, mode='edge', coupling='ac', sweep='normal', slope='positive', level=0.00, source='channel1'):
-        self.inst.write(':trigger:mode ' + mode)
-        self.inst.write(':trigger:coupling ' + coupling)
+    def setTriggerEdge(self, coupling='ac', sweep='normal', slope='positive', level=0.00, source='channel1'):
+        self.inst.write(':trigger:mode edge')
         self.inst.write(':trigger:sweep ' + sweep)
-        self.inst.write(':trigger:source ' + source)
-        self.inst.write(':trigger:slope ' + slope)
-        self.inst.write(':trigger:level ' + str(level))
+        self.inst.write(':trigger:coupling ' + coupling)
+        self.inst.write(':trigger:edge:source ' + source)
+        self.inst.write(':trigger:edge:slope ' + slope)
+        self.inst.write(':trigger:edge:level ' + str(level))
 
     #display
     def displayClear(self):
