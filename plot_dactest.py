@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 #print(pd.__version__)
 plt.rcParams["figure.dpi"] = 144
 
-filename='newchip2_test'
+filename='newchip2_dac'
 
 
 headers = ['DAC_name', 'DAC_value', 'VDDA', 'IDDA', 'VDDD', 'IDDD', 'IRB']
