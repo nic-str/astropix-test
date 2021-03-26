@@ -15,14 +15,20 @@ class asicconfig_http:
     def __init__(self):
         
         # Base Url
-        self.url = 'http://localhost:8090/asic/config/'
+        self.url = 'http://localhost:8090/asic/'
         
         # DAC path
-        self.urlSetDac = 'DACS/{}/set/{}'
+        self.urlSetDac = 'config/DACS/{}/set/{}'
         # Config path
-        self.urlSetConfig = 'Config/{}/set/{}'
+        self.urlSetConfig = 'config/Config/{}/set/{}'
+        
+        # Injection path
+        self.urlStartInjection = 'injection/start/{}/{}/{}/{}'
+        self.urlStopInjection = 'injection/stop'
+        
+        
         # ASIC Update path
-        self.urlUpdate = '@send'
+        self.urlUpdate = 'config/@send'
 
         # List Current DACs
         self.dacs = ['blres',
@@ -89,3 +95,25 @@ class asicconfig_http:
         r = requests.get(self.url + self.urlUpdate)
         
         return self.requestCode(r)
+
+    def startInjection(self, voltage: float, delay: int, period: int, clkdiv: int) -> bool:
+        """Start/Update Injection"""
+        
+        if ((voltage > 0) | (voltage < 1.8)):
+            r = requests.get(self.url + self.urlStartInjection.format(voltage, delay, period, clkdiv))
+
+            return self.requestCode(r)
+        
+        else:
+            return False
+
+    def stopInjection(self) -> bool:
+        """Stop Injection"""
+        
+        r = requests.get(self.url + self.urlStopInjection)
+        
+        return self.requestCode(r)
+        
+
+        
+        
