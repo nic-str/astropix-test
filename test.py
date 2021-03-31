@@ -10,8 +10,6 @@ import pyvisa
 import time
 import csv
 
-from datetime import datetime
-
 from asicconfig_http import asicconfig_http
 
 from instruments.mso5000 import mso5000
@@ -93,24 +91,22 @@ psu_vddd_amps = 0
 
 csv_list = []
 
-
+# Create Config Object
+config = asicconfig_http()
 
 # Test DAC Linearity
 if False:
+
     # Output CSV filename
     filename = input("Input the Filename: ")
-    
-    # Create Config Object
-    config = asicconfig_http()
     
     #Iterate trough DACs in list
     for dac_name in test_dacs:
         
         dac_value = 0
-    
-        #Reset all DACs to 5
-        for dac_name2 in test_dacs:
-            config.setDac(dac_name2, 5)
+        
+        # Reset DACs
+        config.resetDacs()
         
         while dac_value < 64:
     
@@ -169,8 +165,9 @@ if False:
                   fmt='%s',
                   header=header)
 
-# Create Histogram
-if False: 
+# Create Histogram for screenshot
+if False:
+    
     # Set trigger on injection Channel
     mso.setTrigger('edge', 'ac', 'normal', 'negative', 0.10, 'channel3')
     
@@ -204,26 +201,25 @@ if False:
     
     print(f'Max: {stat_max}\nMin: {stat_min}\nDev: {stat_dev}\nAvg: {stat_avg}\n')
     mso.getScreenshot('test_histogram.png')
-        
-    # Todo: CSV Output
 
 # Test SFOUT    
 if True:
-    config = asicconfig_http()
     
+    # Reset DACs
+    config.resetDacs()
+    
+    config.setDac('vncomp', 0)
+    config.updateAsic()
     
     
     #Setup Vmax Measurement
     mso.setStatisticsItem('vmax','chan1')
     
+    # create file and write header
     filename = input("Input the Filename: ")
-    header = "Vinj,aver,dev"
-    csv_array=[]
-    numpy.savetxt('csv/{}.csv'.format(filename),
-                  csv_array,
-                  delimiter=",",
-                  fmt='%s',
-                  header=header)
+    with open(f'csv/{filename}.csv', 'w', newline='') as outcsv:
+        writer = csv.DictWriter(outcsv, fieldnames = ["Vinj","aver","dev"])
+        writer.writeheader()
     
     injectionvoltage=0.1
     
@@ -232,28 +228,37 @@ if True:
     max=0
     csv_list=[]
     
-    mso.setChannelProbe(1,1)
-    mso.setChannelProbe(10,2)
-    mso.setChannelOptions('100M', 'AC', 1)
-    mso.setChannelOptions('100M', 'DC', 2)
+    # Turn on channel
+    mso.setChannelDisplay(1)
+    mso.setChannelDisplay(3)
     
+    # Set Attenuation, Coupling and BW
+    mso.setChannelProbe(1,1)
+    mso.setChannelProbe(10,3)
+    mso.setChannelOptions('100M', 'AC', 1)
+    mso.setChannelOptions('100M', 'DC', 3)
+    
+    # Set initial scale
     mso.setChannelScale(0.01,1)
-    mso.setChannelScale(0.05,2)
+    mso.setChannelScale(0.05,3)
+    
     # Set trigger on injection Channel
-    mso.setTriggerEdge('ac', 'normal', 'negative', 0.05, 'channel2')
+    mso.setTriggerEdge('dc', 'normal', 'negative', 0.05, 'chan3')
     
     while injectionvoltage <= 1.8:
         config.startInjection(injectionvoltage, 500, 100, 300)
         
-        
-        mso.setStatisticsReset()
-        time.sleep(10)
-        maximum=float(mso.getStatisticsItem('max','vmax','chan1'))
-        mso.setChannelScale(maximum/4,1)
-        
         # Sample 5s to adjust scale
         mso.setStatisticsReset()
-        while float(mso.getStatisticsItem('cnt','vmax','chan1')) < 500:
+        mso.setChannelScale(0.05,1)
+        time.sleep(5)
+        maximum=float(mso.getStatisticsItem('max','vmax','chan1'))
+        mso.setChannelScale(maximum/4,1)
+        mso1.write(':channel1:offset '+str(-2*maximum/4))
+        
+        # Start measurement with optimised scale
+        mso.setStatisticsReset()
+        while float(mso.getStatisticsItem('cnt','vmax','chan1')) < 300:
             time.sleep(5)
         
             
@@ -261,20 +266,102 @@ if True:
         avg=float(mso.getStatisticsItem('aver','vmax','chan1'))
         
         csv_list=[injectionvoltage,avg,dev]
-        #line=numpy.array(csv_list)
         
+        # Append Measurement to file
         with open('csv/{}.csv'.format(filename),'a', newline='') as fd:
             csv_writer = csv.writer(fd)
             csv_writer.writerow(csv_list)
-            #fd.write(str(csv_list).strip('[]'))
         
         
         injectionvoltage=round(injectionvoltage+0.05,2)
+
+# Test comparator Channel1:OutB Channel3: Injection
+if False:
+    wavegen=':source1'
+    
+    # Reset DACs
+    config.resetDacs()
+    
+    # disable VNFOLL2
+    config.setDac('vnfoll2',0)
+    
+    config.updateAsic()
+    
+    config.stopInjection()
+    
+    # Setup neg. pulsewidth Measurement
+    mso.setStatisticsItem('NWIDth','chan1')
+    mso1.write(':MEASure:SETup:MID 20')
+    
+    # Measure injection vpp
+    mso.setStatisticsItem('vpp','chan3')
+    
+    # create file and write header
+    filename = input("Input the Filename: ")
+    with open(f'csv/comp_{filename}.csv', 'w', newline='') as outcsv:
+        writer = csv.DictWriter(outcsv, fieldnames = ["Vinj","pulse_avg","pulse_dev","comp_avg","comp_dev"])
+        writer.writeheader()
+    
+    injectionvoltage=0.04
+    
+    dev=0
+    avg=0
+    max=0
+    csv_list=[]
+    
+    # Set Attenuation, Coupling and BW
+    mso.setChannelProbe(10,1)
+    mso.setChannelProbe(1,3)
+    mso.setChannelOptions('100M', 'DC', 1)
+    mso.setChannelOptions('100M', 'DC', 3)
+    
+    # Set initial scale
+    mso.setChannelScale(0.5,1)
+    mso.setChannelScale(0.05,2)
+    
+    # Set trigger on injection Channel
+    mso.setTriggerEdge('dc', 'normal', 'positive', injectionvoltage/2, 'chan3')
+    
+    mso1.write(wavegen+':OUTPut:IMPedance omeg')
+    mso1.write(wavegen+':freq 10k')
+    mso1.write(wavegen+':func expfall')
+    #mso1.write(wavegen+':pulse:dcycle 50')
     
     
     
-
-    
-
-
-
+    while injectionvoltage <= 0.25:
+        mso.setTriggerEdge('dc', 'normal', 'positive', injectionvoltage/2, 'chan3')
+        #config.startInjection(injectionvoltage, 500, 100, 300)
+        mso1.write(wavegen+':volt:level:ampl '+str(injectionvoltage))
+        mso1.write(wavegen+':volt:level:offs '+str(injectionvoltage/2))
+        mso1.write(wavegen+':APPLy:expfall')
+        
+        # Sample 5s to adjust scale
+        mso.setStatisticsReset()
+        mso1.write(':TIMebase:MAIN:SCALe 0.00002')
+        time.sleep(5)
+        maximum=float(mso.getStatisticsItem('max','nwidth','chan1'))
+        mso1.write(':TIMebase:MAIN:SCALe '+str(maximum/5))
+        mso1.write(':TIMebase:MAIN:OFFSet '+str(2*maximum/5))
+        
+        # Start measurement with optimised scale
+        mso.setStatisticsReset()
+        while float(mso.getStatisticsItem('cnt','nwidth','chan1')) < 300:
+            time.sleep(5)
+        
+            
+        dev=float(mso.getStatisticsItem('dev','nwidth','chan1'))
+        avg=float(mso.getStatisticsItem('aver','nwidth','chan1'))
+        
+        pulse_avg=float(mso.getStatisticsItem('aver','vpp','chan3'))
+        pulse_dev=float(mso.getStatisticsItem('dev','vpp','chan3'))
+        
+        csv_list=[injectionvoltage,pulse_avg,pulse_dev,avg,dev]
+        
+        # Append Measurement to file
+        with open('csv/comp_{}.csv'.format(filename),'a', newline='') as fd:
+            csv_writer = csv.writer(fd)
+            csv_writer.writerow(csv_list)
+        
+        
+        injectionvoltage=round(injectionvoltage+0.01,2)
