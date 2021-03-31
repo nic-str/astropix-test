@@ -40,6 +40,16 @@ class asicconfig_http:
                      'vnbias',
                      'vpload',
                      'vncomp']
+        
+        self.dacsValue = [5,
+                     2,
+                     2,
+                     5,
+                     5,
+                     5,
+                     5,
+                     2,
+                     5]
 
         # List Config
         self.config = ['interrupt_pushpull','ResetB Biasblock']
@@ -88,6 +98,14 @@ class asicconfig_http:
         """Get Config"""
         
         pass
+    
+    def resetDacs(self) -> bool:
+        """Reset DACs to default value"""
+        
+        for i in range(len(self.dacs)):
+            self.setDac(self.dacs[i],self.dacsValue[i])
+            
+        return self.updateAsic()
 
     def updateAsic(self) -> bool:
         """Update ASIC Config"""
