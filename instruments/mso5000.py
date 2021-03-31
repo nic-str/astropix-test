@@ -31,6 +31,9 @@ class mso5000:
             f.write(bytearray(buf))
     
     #Channel settings  
+    def setChannelDisplay(self, channel=1, enable=1):
+        self.inst.write(':CHANnel'+str(channel)+':DISPlay '+str(enable))
+        
     def setChannelScale(self, scale="1.000", channel=1):
         self.inst.write(':channel' + str(channel) + ':scale ' + str(scale))
 
