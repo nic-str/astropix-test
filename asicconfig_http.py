@@ -31,25 +31,15 @@ class asicconfig_http:
         self.urlUpdate = 'config/@send'
 
         # List Current DACs
-        self.dacs = ['blres',
-                     'vn1',
-                     'vn2',
-                     'vnfb',
-                     'vnfoll',
-                     'vnfoll2',
-                     'vnbias',
-                     'vpload',
-                     'vncomp']
-        
-        self.dacsValue = [5,
-                     2,
-                     2,
-                     5,
-                     5,
-                     5,
-                     5,
-                     2,
-                     5]
+        self.dacs = {'blres': 5,
+                     'vn1': 2,
+                     'vn2': 0,
+                     'vnfb': 5,
+                     'vnfoll': 1,
+                     'vnfoll2': 5,
+                     'vnbias': 5,
+                     'vpload': 1,
+                     'vncomp': 0}
 
         # List Config
         self.config = ['interrupt_pushpull','ResetB Biasblock']
@@ -102,8 +92,9 @@ class asicconfig_http:
     def resetDacs(self) -> bool:
         """Reset DACs to default value"""
         
-        for i in range(len(self.dacs)):
-            self.setDac(self.dacs[i],self.dacsValue[i])
+        for key,value in self.dacs.items():
+            print(key, value)
+            self.setDac(key,value)
             
         return self.updateAsic()
 
