@@ -90,24 +90,25 @@ class mso5000:
     def getMeasAmplitude(self, channel=1):
         try:
             return float(self.inst.query(':measure:item? vamp,channel' + str(channel)).rstrip())  #request measurement, convert to float
-        except:
+        except TypeError:
             return 0
     
     def getMeasVmax(self, channel=1):
         try:
             return float(self.inst.query(':measure:item? vmax,channel' + str(channel)).rstrip())  #request measurement, convert to float
-        except:
+        except TypeError:
             return 0
 
     def getMeasFrequency(self, channel=1):
         try:
             return float(self.inst.query(':measure:item? freq,channel' + str(channel)).rstrip())
-        except:
+        except TypeError:
             return 0
 
     def getImpedance(self, channel=1):
         #if string == "OMEG" or "FIFT"
-        return Impedance.FiftyOhm
+        #return Impedance.FiftyOhm
+        pass
 
     def setupMeasPhase(self, channelA=1, channelB=2):       #can also use digital or math channels
         self.inst.write(':measure:setup:psa chan' + str(channelA))
@@ -125,10 +126,8 @@ class mso5000:
         resp = resp.rstrip()
         if resp == "1":
             return True
-        if resp == "0":
-            return False
         else:
-            return ValueError
+            return False
 
     #Read waveform data
     #set waveform source channel
@@ -138,21 +137,21 @@ class mso5000:
 
     #mode: normal, maximum, raw (must be in stop mode)
     #format: word, byte, ascii (comma separated scientific notation)
-    def waveDataFormat(self, mode='normal', format='byte', points=1000):
+    def waveDataFormat(self, mode='normal', waveDataformat='byte', points=1000):
         self.inst.write(':waveform:mode ' + mode)
-        self.inst.write(':waveform:format ' + format)
+        self.inst.write(':waveform:format ' + waveDataformat)
         self.inst.write(':waveform:format ' + str(points))
 
     def getWaveData(self):
         pass
     
-    def setHistogram(self, enable, type, sourcechannel, size = 3, statistics = 1):
+    def setHistogram(self, enable, histogramtype, sourcechannel, size = 3, statistics = 1):
         
         self.inst.write(':histogram:display ' + str(enable))
         
         validType = {'horizontal', 'vertical', 'meas'}
         if type in validType:
-            self.inst.write(':histogram:type ' + type)
+            self.inst.write(':histogram:type ' + histogramtype)
         
         self.inst.write(':histogram:source chan' + sourcechannel)
         
@@ -197,7 +196,7 @@ class mso5000:
         
         self.inst.write(':MEASure:STATistic:RESet')
         
-    def getStatisticsItem(self, type, item, source):
+    def getStatisticsItem(self, itemtype, item, source):
         """ Get Statistics
         
         :param type: MAXimum|MINimum|CURRent|AVERages|DEViation|CNT
@@ -205,6 +204,6 @@ class mso5000:
         :param source: D0|D1|D2|D3|D4|D5|D6|D7|D8|D9|D10|D11|D12|D13|D14|D15|CHANnel1|CHANnel2|CHANnel3|CHANnel4|MATH1|MATH2|MATH3|MATH4
         """
         
-        return self.inst.query(f':MEASure:STATistic:ITEM? {type},{item},{source}').rstrip("\n")
+        return self.inst.query(f':MEASure:STATistic:ITEM? {type},{itemtype},{source}').rstrip("\n")
         
         
