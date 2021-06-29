@@ -124,10 +124,11 @@ class mso5000:
     def getOutputState(self, channel="1"):
         resp = self.inst.query(":source:OUTP" + channel + ":state?")
         resp = resp.rstrip()
+        
         if resp == "1":
             return True
-        else:
-            return False
+        
+        return False
 
     #Read waveform data
     #set waveform source channel
