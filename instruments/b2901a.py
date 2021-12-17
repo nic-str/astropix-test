@@ -26,7 +26,7 @@ class b2901a:
         self.mode = mode
 
     def setVal(self, value: float):
-        self.inst.write(":SOUR:"+self.mode + " " + value)
+        self.inst.write(":SOUR:"+self.mode + " " + str(value))
 
     def setFunc(self, function: str):
 
@@ -37,10 +37,11 @@ class b2901a:
 
     def setNPLC(self, nplc: float):
         if 0 < nplc <= 200:
-            self.inst.write(":SENS:FUNC:NPLC "+nplc)
+            self.inst.write(":SENS:FUNC:NPLC "+str(nplc))
 
     def setLimit(self, value: float):
-        self.inst.write(":SENS:"+self.mode+":PROT "+value)
+        string = ":SENS:"+"CURR"+":PROT "+str(value)
+        self.inst.write(string)
 
 
     def enableOut(self, enable: bool):
