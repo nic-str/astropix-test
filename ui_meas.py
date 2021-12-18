@@ -10,20 +10,20 @@ import pyvisa
 import time
 import csv
 
-#sfrom asicconfig_http import asicconfig_http
-
-from instruments.mso5000 import mso5000
-from instruments.hp6632b import hp6632b
-from instruments.k236 import k236
 from instruments.b2901a import b2901a
 
 filename = "ui_test"
 
+voltage = -10
+voltage_stop = -200
+voltage_step = -1
+
+settling_time = 5
+
 rm = pyvisa.ResourceManager()
 print(rm.list_resources())
-inst = rm.open_resource('GPIB0::23::INSTR', open_timeout=1000)
 
-smu = b2901a(inst)
+smu = b2901a(rm.open_resource('GPIB0::23::INSTR', open_timeout=1000))
 
 print(smu.getID())
 
@@ -32,29 +32,27 @@ smu.setFunc("CURR")
 smu.setLimit(-5e-6)
 smu.setNPLC(200)
 
-smu.setVal(-1)
+smu.setVal(0)
 
-voltage = -10
-voltage_step = -1
+
+with open(f'csv/{filename}.csv', 'w', newline='') as outcsv:
+    csv_writer = csv.DictWriter(outcsv, fieldnames = ['U', 'I','x1','x2','x3','x4'])
+    csv_writer.writeheader()
 
 smu.enableOut(True)
 
-while voltage >= -200:
+while voltage >= voltage_stop:
     smu.setVal(voltage)
 
-    voltage = voltage + voltage_step
-    time.sleep(5)
+    voltage += voltage_step
+    time.sleep(settling_time)
 
-    readVal = smu.getVal().rstrip("\n")
-
-    readList = readVal.split(",")
+    readList = smu.getVal().split(",")
     print(readList)
 
-    with open('csv/{}.csv'.format(filename),'a', newline='') as fd:
-        csv_writer = csv.writer(fd)
+    with open(f'csv/{filename}.csv', 'a', newline='') as outcsv:
+        csv_writer = csv.writer(outcsv)
         csv_writer.writerow(readList)
 
 smu.enableOut(False)
 smu.setVal(0)
-
-#inst.write("")

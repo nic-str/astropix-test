@@ -65,10 +65,10 @@ class b2901a:
 
         self.inst.write(":OUTP " + enstring)
 
-    def getVal(self):
+    def getVal(self) -> str:
 
         return self.inst.query(":MEAS?").rstrip("\n")
 
-    def getFunc(self):
+    def getFunc(self) -> str:
 
         return self.inst.query(":MEAS:FUNC?").rstrip("\n")
